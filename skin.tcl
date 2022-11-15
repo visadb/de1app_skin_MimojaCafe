@@ -140,16 +140,28 @@ proc iconik_toggle_cleaning {} {
 
 proc is_connected {} {return [expr {[clock seconds] - $::de1(last_ping)} < 5]}
 
+set ::scale_warning_last_timestamp 0
+set ::scale_warning_min_interval_seconds 4
+proc show_scale_warning_toast { warning_text } {
+    set now [clock seconds]
+    if {$now >= $::scale_warning_last_timestamp + $::scale_warning_min_interval_seconds} {
+        borg toast [translate $warning_text]
+        set ::scale_warning_last_timestamp $now
+    }
+}
+
 proc iconik_get_status_text {} {
 	if {[is_connected] != 1} {
 		return [translate "Disconnected"]
 	}
 
 	if {$::currently_connecting_scale_handle != 0} {
+	    show_scale_warning_toast "SCALE RECONNECTING!!!"
 		return  [translate "Scale reconnecting"]
 	}
 
 	if { [::device::scale::expecting_present] && ![::device::scale::is_connected]} {
+	    show_scale_warning_toast "SCALE DISCONNECTED!!!"
 		return [translate "Scale disconnected.\nTap here"]
 	}
 
